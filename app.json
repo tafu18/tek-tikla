@@ -13,6 +13,7 @@
       "backgroundColor": "#34D399"
     },
     "android": {
+      "package": "com.tayfuntasdemir.tektikla",
       "adaptiveIcon": {
         "backgroundColor": "#34D399",
         "foregroundImage": "./assets/images/tek-tikla.png",
