@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Tek Tıkla",
+    "slug": "tek-tikla-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/tek-tikla.png",
+    "scheme": "tek-tikla",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "backgroundColor": "#34D399",
+      "primaryColor": "#34D399"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#34D399",
+        "foregroundImage": "./assets/images/tek-tikla.png",
+        "backgroundImage": "./assets/images/tek-tikla.png",
+        "monochromeImage": "./assets/images/tek-tikla.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/tek-tikla.png",
+      "backgroundColor": "#34D399",
+      "themeColor": "#34D399"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/tek-tikla.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#34D399",
+          "dark": {
+            "backgroundColor": "#34D399"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
