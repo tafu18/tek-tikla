@@ -145,7 +145,7 @@ export default function AddScreen() {
               <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="Örn: Google"
+                  placeholder="Örn: Tek Tıkla"
                   placeholderTextColor={colors.textSecondary}
                   value={name}
                   onChangeText={setName}
@@ -161,7 +161,7 @@ export default function AddScreen() {
                 <Ionicons name="globe-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="Örn: google.com veya https://google.com"
+                  placeholder="Örn: tektikla.com"
                   placeholderTextColor={colors.textSecondary}
                   value={url}
                   onChangeText={setUrl}

@@ -259,7 +259,7 @@ export default function WebViewScreen() {
         // Performans
         startInLoadingState={true}
         renderLoading={() => (
-          <View style={styles.loadingOverlay}>
+          <View style={[styles.loadingOverlay, { backgroundColor: `${colors.background}CC` }]}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         )}
@@ -384,7 +384,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   loadingBarContainer: {
     position: 'absolute',
