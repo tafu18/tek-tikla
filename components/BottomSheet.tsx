@@ -12,8 +12,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
-  runOnJS,
+  withTiming
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
@@ -51,14 +50,11 @@ export default function BottomSheet({
 
     if (visible) {
       opacity.value = withTiming(1, { duration: 200 });
-      // Sheet en altta (translateY = 0), yukarı çıkmak için negatif değer
-      // Örnek: Ekran 800px, %75 = 600px, sheet 600px yukarıda olmalı
-      // translateY = -600px (sheet yukarı çıkar)
-      const targetHeight = defaultSnapPoint < normalizedSnapPoints.length 
-        ? normalizedSnapPoints[defaultSnapPoint]
-        : SCREEN_HEIGHT * 0.7;
+      // Sheet bottom: 0'da başlıyor, yukarı çıkmak için negatif translateY
+      // targetHeight kadar yukarı çıkarmak için: translateY = -targetHeight
+
       // Sheet'i bottom'dan targetHeight kadar yukarı çıkar
-      const targetY = -(SCREEN_HEIGHT - targetHeight);
+      const targetY = 0;
       translateY.value = withSpring(targetY, {
         damping: 15,
         stiffness: 150,
@@ -142,7 +138,7 @@ export default function BottomSheet({
           {
             backgroundColor: colors.card,
             borderColor: colors.border,
-            paddingBottom: Math.max(insets.bottom, 20),
+            paddingBottom: insets.bottom,
           },
         ]}
       >

@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+import { LanguageProvider } from "../contexts/LanguageContext";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import * as SystemUI from "expo-system-ui";
@@ -32,7 +33,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <RootLayoutNav />
+      <LanguageProvider>
+        <RootLayoutNav />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

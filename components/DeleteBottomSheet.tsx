@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React from 'react';
 import {
+  Dimensions,
   StyleSheet,
   Text,
   TextInput,
@@ -10,7 +11,10 @@ import {
 } from 'react-native';
 import BottomSheet from './BottomSheet';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { getFaviconUrl } from '../utils/storage';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface DeleteBottomSheetProps {
   visible: boolean;
@@ -32,9 +36,14 @@ export default function DeleteBottomSheet({
   onCancel,
 }: DeleteBottomSheetProps) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   return (
-    <BottomSheet visible={visible} onClose={onCancel}>
+    <BottomSheet 
+      visible={visible} 
+      onClose={onCancel}
+      defaultSnapPoint={0}
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
@@ -71,7 +80,7 @@ export default function DeleteBottomSheet({
               <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.passwordInput, { color: colors.text }]}
-                placeholder="Şifre girin"
+                placeholder={t('delete.password.placeholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={passwordInput}
                 onChangeText={onPasswordChange}
@@ -88,7 +97,7 @@ export default function DeleteBottomSheet({
         <View style={[styles.warning, { backgroundColor: colors.error + '15' }]}>
           <Ionicons name="warning-outline" size={20} color={colors.error} />
           <Text style={[styles.warningText, { color: colors.textSecondary }]}>
-            Bu web sitesi kalıcı olarak silinecek. Bu işlem geri alınamaz.
+            {t('delete.warning')}
           </Text>
         </View>
 
@@ -98,7 +107,7 @@ export default function DeleteBottomSheet({
             onPress={onCancel}
             activeOpacity={0.7}
           >
-            <Text style={[styles.buttonText, { color: colors.text }]}>İptal</Text>
+            <Text style={[styles.buttonText, { color: colors.text }]}>{t('common.cancel')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -114,7 +123,7 @@ export default function DeleteBottomSheet({
           >
             <View style={styles.buttonContent}>
               <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.buttonTextDelete}>Sil</Text>
+              <Text style={styles.buttonTextDelete}>{t('delete.confirm')}</Text>
             </View>
           </TouchableOpacity>
         </View>

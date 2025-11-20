@@ -13,20 +13,31 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { formatUrl, getWebSites, saveWebSite, updateWebSite, isUrlBlocked } from '../utils/storage';
+import { formatUrl, getWebSites, isUrlBlocked, saveWebSite, updateWebSite } from '../utils/storage';
 
 export default function AddScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string }>();
+  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ id?: string; name?: string; url?: string }>();
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
   const [hasPassword, setHasPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    // Only set template params if we're not editing (no id param)
+    if (params.name && params.url && !params.id) {
+      setName(decodeURIComponent(params.name));
+      setUrl(decodeURIComponent(params.url));
+    }
+  }, [params.name, params.url, params.id]);
 
   useEffect(() => {
     if (params.id) {
@@ -45,7 +56,7 @@ export default function AddScreen() {
         setIsEditing(true);
       }
     } catch (error) {
-      Alert.alert('Hata', 'Web sitesi yüklenirken bir hata oluştu.');
+      Alert.alert(t('common.error'), t('add.error.load.failed'));
     }
   };
 
@@ -61,17 +72,17 @@ export default function AddScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Hata', 'Lütfen bir isim girin.');
+      Alert.alert(t('common.error'), t('add.error.name.required'));
       return;
     }
 
     if (!url.trim()) {
-      Alert.alert('Hata', 'Lütfen bir URL girin.');
+      Alert.alert(t('common.error'), t('add.error.url.required'));
       return;
     }
 
     if (!validateUrl(url)) {
-      Alert.alert('Hata', 'Geçerli bir URL girin.');
+      Alert.alert(t('common.error'), t('add.error.url.invalid'));
       return;
     }
 
@@ -79,9 +90,9 @@ export default function AddScreen() {
     const blockCheck = isUrlBlocked(url, name);
     if (blockCheck.blocked) {
       Alert.alert(
-        'Yasaklı İçerik',
-        blockCheck.reason || 'Bu site eklenemez. Lütfen farklı bir site deneyin.',
-        [{ text: 'Tamam' }]
+        t('add.error.blocked'),
+        blockCheck.reason || t('add.error.blocked.message'),
+        [{ text: t('common.ok') }]
       );
       return;
     }
@@ -111,15 +122,15 @@ export default function AddScreen() {
 
       router.back();
     } catch (error: any) {
-      const errorMessage = error?.message || 'Kayıt işlemi başarısız oldu.';
-      Alert.alert('Hata', errorMessage);
+      const errorMessage = error?.message || t('add.error.save.failed');
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -129,23 +140,23 @@ export default function AddScreen() {
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
-            {isEditing ? 'Düzenle' : 'Yeni Web Sitesi'}
+            {isEditing ? t('add.edit.title') : t('add.title')}
           </Text>
           <View style={styles.placeholder} />
         </View>
 
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>İsim</Text>
+              <Text style={[styles.label, { color: colors.text }]}>{t('add.name.label')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="Örn: Tek Tıkla"
+                  placeholder={t('add.name.placeholder')}
                   placeholderTextColor={colors.textSecondary}
                   value={name}
                   onChangeText={setName}
@@ -156,12 +167,12 @@ export default function AddScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>URL</Text>
+              <Text style={[styles.label, { color: colors.text }]}>{t('add.url.label')}</Text>
               <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="globe-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="Örn: tektikla.com"
+                  placeholder={t('add.url.placeholder')}
                   placeholderTextColor={colors.textSecondary}
                   value={url}
                   onChangeText={setUrl}
@@ -174,7 +185,7 @@ export default function AddScreen() {
 
             <View style={styles.inputGroup}>
               <View style={styles.passwordHeader}>
-                <Text style={[styles.label, { color: colors.text }]}>Şifre Koruması</Text>
+                <Text style={[styles.label, { color: colors.text }]}>{t('add.password.label')}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setHasPassword(!hasPassword);
@@ -194,7 +205,7 @@ export default function AddScreen() {
                   <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
                   <TextInput
                     style={[styles.input, { color: colors.text }]}
-                    placeholder="Şifre girin (opsiyonel)"
+                    placeholder={t('add.password.placeholder')}
                     placeholderTextColor={colors.textSecondary}
                     value={password}
                     onChangeText={setPassword}
@@ -215,7 +226,7 @@ export default function AddScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.saveButtonText}>Kaydet</Text>
+                <Text style={styles.saveButtonText}>{t('add.save')}</Text>
               )}
             </TouchableOpacity>
           </View>

@@ -21,6 +21,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -32,13 +33,14 @@ interface InfoBottomSheetProps {
 
 export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetProps) {
   const { colors } = useTheme();
+  const { t, language, setLanguage } = useLanguage();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
   const keyboardHeight = useSharedValue(0);
 
   // Sheet ekranın %85'ini kaplar
-  const SHEET_HEIGHT = SCREEN_HEIGHT * 0.85;
+  const SHEET_HEIGHT = SCREEN_HEIGHT * 0.86;
 
   useEffect(() => {
     if (visible) {
@@ -122,7 +124,6 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
             backgroundColor: colors.card,
             borderColor: colors.border,
             height: SHEET_HEIGHT,
-            paddingBottom: 0,
           },
         ]}
       >
@@ -132,7 +133,7 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
           keyboardShouldPersistTaps="handled"
           nestedScrollEnabled={true}
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom }]}
           bounces={true}
         >
           <View style={styles.infoHeader}>
@@ -142,83 +143,132 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
               contentFit="contain"
               transition={200}
             />
-            <Text style={[styles.infoTitle, { color: colors.text }]}>Tek Tıkla</Text>
+            <Text style={[styles.infoTitle, { color: colors.text }]}>{t('info.title')}</Text>
             <Text style={[styles.infoSubtitle, { color: colors.textSecondary }]}>
-              Hakkında
+              {t('info.subtitle')}
             </Text>
           </View>
 
           <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.infoSection}>
-            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Bu Uygulama Nedir?</Text>
+            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{t('language.title')}</Text>
+            <View style={styles.infoLanguageContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.infoLanguageButton,
+                  { 
+                    backgroundColor: language === 'tr' ? colors.primary : colors.surface,
+                    borderColor: colors.border 
+                  }
+                ]}
+                onPress={() => setLanguage('tr')}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.infoLanguageText,
+                  { color: language === 'tr' ? '#FFFFFF' : colors.text }
+                ]}>
+                  {t('language.turkish')}
+                </Text>
+                {language === 'tr' && (
+                  <Ionicons name="checkmark" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.infoLanguageButton,
+                  { 
+                    backgroundColor: language === 'en' ? colors.primary : colors.surface,
+                    borderColor: colors.border 
+                  }
+                ]}
+                onPress={() => setLanguage('en')}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.infoLanguageText,
+                  { color: language === 'en' ? '#FFFFFF' : colors.text }
+                ]}>
+                  {t('language.english')}
+                </Text>
+                {language === 'en' && (
+                  <Ionicons name="checkmark" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.infoSection}>
+            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{t('info.what.title')}</Text>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              Tek Tıkla, favori web sitelerinize hızlı ve kolay erişim sağlayan minimalist bir uygulamadır. 
-              Tüm önemli web sitelerinizi tek bir yerde toplayın ve tek tıkla erişin.
+              {t('info.what.text')}
             </Text>
           </View>
 
           <View style={styles.infoSection}>
-            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Ne İş Yapar?</Text>
+            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{t('info.features.title')}</Text>
             <View style={styles.infoFeatureList}>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Web sitelerinizi organize edin ve hızlıca erişin
+                  {t('info.features.1')}
                 </Text>
               </View>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Şifre koruması ile sitelerinizi güvende tutun
+                  {t('info.features.2')}
                 </Text>
               </View>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Dark/Light tema desteği
+                  {t('info.features.3')}
                 </Text>
               </View>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Otomatik favicon desteği
+                  {t('info.features.4')}
                 </Text>
               </View>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Arama özelliği ile sitelerinizi kolayca bulun
+                  {t('info.features.5')}
                 </Text>
               </View>
             </View>
           </View>
 
           <View style={styles.infoSection}>
-            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Özellikler</Text>
+            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{t('info.specs.title')}</Text>
             <View style={styles.infoFeatureList}>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="star" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Sınırsız web sitesi ekleme
+                  {t('info.specs.1')}
                 </Text>
               </View>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="star" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Şifre koruması (1 günlük cache)
+                  {t('info.specs.2')}
                 </Text>
               </View>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="star" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  İçerik filtreleme
+                  {t('info.specs.3')}
                 </Text>
               </View>
               <View style={styles.infoFeatureItem}>
                 <Ionicons name="star" size={20} color={colors.primary} />
                 <Text style={[styles.infoFeatureText, { color: colors.textSecondary }]}>
-                  Modern ve minimalist tasarım
+                  {t('info.specs.4')}
                 </Text>
               </View>
             </View>
@@ -227,9 +277,9 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
           <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.infoSection}>
-            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Geliştirici</Text>
+            <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{t('info.developer.title')}</Text>
             <Text style={[styles.infoText, { color: colors.textSecondary, marginBottom: 16 }]}>
-              Tayfun Taşdemir
+              {t('info.developer.name')}
             </Text>
             
             <View style={styles.infoLinksContainer}>
@@ -239,7 +289,7 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
                 activeOpacity={0.7}
               >
                 <Ionicons name="globe-outline" size={18} color={colors.primary} />
-                <Text style={[styles.infoLinkText, { color: colors.text }]}>Web Sitem</Text>
+                <Text style={[styles.infoLinkText, { color: colors.text }]}>{t('info.developer.website')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -248,7 +298,7 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
                 activeOpacity={0.7}
               >
                 <Ionicons name="moon-outline" size={18} color={colors.primary} />
-                <Text style={[styles.infoLinkText, { color: colors.text }]}>Vakt-i Huzur</Text>
+                <Text style={[styles.infoLinkText, { color: colors.text }]}>{t('info.developer.vakti')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -257,7 +307,7 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
                 activeOpacity={0.7}
               >
                 <Ionicons name="logo-linkedin" size={18} color={colors.primary} />
-                <Text style={[styles.infoLinkText, { color: colors.text }]}>LinkedIn</Text>
+                <Text style={[styles.infoLinkText, { color: colors.text }]}>{t('info.developer.linkedin')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -266,7 +316,7 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
                 activeOpacity={0.7}
               >
                 <Ionicons name="logo-google-playstore" size={18} color={colors.primary} />
-                <Text style={[styles.infoLinkText, { color: colors.text }]}>Vakt-i Huzur App</Text>
+                <Text style={[styles.infoLinkText, { color: colors.text }]}>{t('info.developer.app')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -276,7 +326,7 @@ export default function InfoBottomSheet({ visible, onClose }: InfoBottomSheetPro
             onPress={onClose}
             activeOpacity={0.8}
           >
-            <Text style={styles.infoCloseButtonText}>Kapat</Text>
+            <Text style={styles.infoCloseButtonText}>{t('common.close')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </Animated.View>
@@ -369,6 +419,23 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   infoLinksContainer: {
+  },
+  infoLanguageContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  infoLanguageButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  infoLanguageText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   infoLink: {
     flexDirection: 'row',

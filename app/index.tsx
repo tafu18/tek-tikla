@@ -20,11 +20,15 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import DeleteBottomSheet from '../components/DeleteBottomSheet';
 import InfoBottomSheet from '../components/InfoBottomSheet';
 import PasswordBottomSheet from '../components/PasswordBottomSheet';
+import TemplateBottomSheet from '../components/TemplateBottomSheet';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { deleteWebSite, getFaviconUrl, getWebSites, isPasswordCached, setPasswordCache, WebSite } from '../utils/storage';
+import { Template } from '../utils/templates';
 
 export default function HomeScreen() {
   const { colors, isDark, theme, setTheme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [websites, setWebsites] = useState<WebSite[]>([]);
@@ -39,6 +43,7 @@ export default function HomeScreen() {
   const [websiteToOpen, setWebsiteToOpen] = useState<{ id: string; url: string; password?: string; isEdit?: boolean } | null>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const [templateModalVisible, setTemplateModalVisible] = useState(false);
 
   const loadWebsites = useCallback(async (showLoading = true) => {
     try {
@@ -48,7 +53,7 @@ export default function HomeScreen() {
       const data = await getWebSites();
       setWebsites(data);
     } catch (error) {
-      Alert.alert('Hata', 'Web siteleri yüklenirken bir hata oluştu.');
+      Alert.alert(t('common.error'), t('add.error.load.failed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -105,7 +110,7 @@ export default function HomeScreen() {
     // Şifre kontrolü gerekliyse kontrol et
     if (deletePasswordRequired && websiteToDelete.password) {
       if (deletePasswordInput.trim() !== websiteToDelete.password) {
-        Alert.alert('Hata', 'Şifre yanlış. Lütfen tekrar deneyin.');
+        Alert.alert(t('common.error'), t('delete.password.wrong'));
         setDeletePasswordInput('');
         return;
       }
@@ -121,7 +126,7 @@ export default function HomeScreen() {
       setDeletePasswordRequired(false);
       setWebsiteToDelete(null);
     } catch (error) {
-      Alert.alert('Hata', 'Silme işlemi başarısız oldu.');
+      Alert.alert(t('common.error'), t('delete.error'));
       setDeleteModalVisible(false);
       setDeletePasswordInput('');
       setDeletePasswordRequired(false);
@@ -146,7 +151,7 @@ export default function HomeScreen() {
         router.push(`/webview/${id}`);
       }
     } else {
-      Alert.alert('Hata', 'Şifre yanlış. Lütfen tekrar deneyin.');
+      Alert.alert(t('common.error'), t('password.wrong'));
       setPasswordInput('');
     }
   };
@@ -293,10 +298,10 @@ export default function HomeScreen() {
         transition={200}
       />
       <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-        Henüz web sitesi eklenmemiş
+        {t('home.empty.title')}
       </Text>
       <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-        + butonuna tıklayarak ekleyebilirsiniz
+        {t('home.empty.subtitle')}
       </Text>
     </View>
   );
@@ -305,12 +310,19 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.primary }]}>Tek Tıkla</Text>
+          <Text style={[styles.title, { color: colors.primary }]}>{t('home.title')}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {websites.length} web sitesi
+            {websites.length} {t('home.websites')}
           </Text>
         </View>
         <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => setTemplateModalVisible(true)}
+            style={[styles.infoButton, { backgroundColor: colors.surface }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="grid-outline" size={22} color={colors.text} />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setInfoModalVisible(true)}
             style={[styles.infoButton, { backgroundColor: colors.surface }]}
@@ -341,7 +353,7 @@ export default function HomeScreen() {
           <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Ara..."
+            placeholder={t('home.search.placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -417,6 +429,14 @@ export default function HomeScreen() {
       <InfoBottomSheet
         visible={infoModalVisible}
         onClose={() => setInfoModalVisible(false)}
+      />
+
+      <TemplateBottomSheet
+        visible={templateModalVisible}
+        onClose={() => setTemplateModalVisible(false)}
+        onSelectTemplate={(template) => {
+          router.push(`/add?name=${encodeURIComponent(template.name)}&url=${encodeURIComponent(template.url)}`);
+        }}
       />
     </SafeAreaView>
   );

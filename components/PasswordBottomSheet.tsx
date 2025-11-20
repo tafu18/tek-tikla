@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
+  Dimensions,
   StyleSheet,
   Text,
   TextInput,
@@ -9,6 +10,9 @@ import {
 } from 'react-native';
 import BottomSheet from './BottomSheet';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface PasswordBottomSheetProps {
   visible: boolean;
@@ -28,13 +32,19 @@ export default function PasswordBottomSheet({
   onCancel,
 }: PasswordBottomSheetProps) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   const handleSubmit = () => {
     onConfirm();
   };
 
   return (
-    <BottomSheet visible={visible} onClose={onCancel}>
+    <BottomSheet 
+      visible={visible} 
+      onClose={onCancel}
+      snapPoints={[SCREEN_HEIGHT * 0.5]}
+      defaultSnapPoint={0}
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
@@ -42,10 +52,10 @@ export default function PasswordBottomSheet({
           </View>
           <View style={styles.headerText}>
             <Text style={[styles.title, { color: colors.text }]}>
-              {website?.isEdit ? 'Düzenleme İçin Şifre Gerekli' : 'Şifre Gerekli'}
+              {website?.isEdit ? t('password.title.edit') : t('password.title')}
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={2}>
-              {website?.isEdit ? 'Bu web sitesini düzenlemek için şifre girin' : 'Bu web sitesi şifre korumalı'}
+              {website?.isEdit ? t('password.message.edit') : t('password.message')}
             </Text>
           </View>
         </View>
@@ -55,7 +65,7 @@ export default function PasswordBottomSheet({
             <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
             <TextInput
               style={[styles.passwordInput, { color: colors.text }]}
-              placeholder="Şifre girin"
+              placeholder={t('password.placeholder')}
               placeholderTextColor={colors.textSecondary}
               value={passwordInput}
               onChangeText={onPasswordChange}
@@ -75,7 +85,7 @@ export default function PasswordBottomSheet({
             onPress={onCancel}
             activeOpacity={0.7}
           >
-            <Text style={[styles.buttonText, { color: colors.text }]}>İptal</Text>
+            <Text style={[styles.buttonText, { color: colors.text }]}>{t('common.cancel')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -85,7 +95,7 @@ export default function PasswordBottomSheet({
           >
             <View style={styles.buttonContent}>
               <Ionicons name="checkmark-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.buttonTextConfirm}>Aç</Text>
+              <Text style={styles.buttonTextConfirm}>{t('password.open')}</Text>
             </View>
           </TouchableOpacity>
         </View>

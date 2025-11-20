@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useTheme } from '../../contexts/ThemeContext';
 import { formatUrl, getWebSites } from '../../utils/storage';
@@ -18,6 +18,7 @@ import { formatUrl, getWebSites } from '../../utils/storage';
 export default function WebViewScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
   const webViewRef = useRef<WebView>(null);
   
@@ -114,7 +115,7 @@ export default function WebViewScreen() {
 
   if (!url) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -123,7 +124,7 @@ export default function WebViewScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity
@@ -237,7 +238,7 @@ export default function WebViewScreen() {
       <WebView
         ref={webViewRef}
         source={{ uri: url }}
-        style={styles.webview}
+        style={[styles.webview, { marginBottom: insets.bottom }]}
         onNavigationStateChange={handleNavigationStateChange}
         onLoadStart={handleLoadStart}
         onLoadEnd={handleLoadEnd}
