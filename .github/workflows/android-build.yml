@@ -1,10 +1,10 @@
-name: Tek Tıkla Android Build (Hızlı)
+name: 👆 Tek Tıkla Build
 
 on:
   workflow_dispatch:
     inputs:
       profile:
-        description: 'Build Profili'
+        description: 'Build Profili Seçin'
         required: true
         default: 'preview'
         type: choice
@@ -15,75 +15,45 @@ on:
 
 jobs:
   build:
-    name: Build Tek Tıkla - ${{ inputs.profile }}
+    name: TekTıkla - ${{ inputs.profile }}
     runs-on: ubuntu-latest
     
     steps:
-      # 1. Kodları Çek
       - name: 🏗 Repo Checkout
         uses: actions/checkout@v4
 
-      # 2. Java Kurulumu (Java 17 Android buildleri için ideal)
-      - name: ☕ Setup Java
+      - name: ☕ Java Kurulumu
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Node.js Kurulumu
-      - name: 🟢 Setup Node.js
+      - name: 🟢 Node.js Kurulumu
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      # 4. Gradle Ayarlarını Optimize Et (EN ÖNEMLİ ADIM)
-      # GitHub Runner'ın RAM'ini verimli kullanması ve paralel işlem yapması için.
-      - name: ⚙️ Setup Gradle Config
-        run: |
-          mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
-          echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
-          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
-          echo "org.gradle.configureondemand=true" >> ~/.gradle/gradle.properties
+      # HATA ÇIKARAN GRADLE ADIMI KALDIRILDI
+      # EAS Build kendi içinde ./gradlew kullanarak doğru versiyonu çekecektir.
 
-      # 5. Gradle Cache (Build-cache aktif edildi)
-      # build-cache-enabled: true parametresi gradle'ın önceki derlemelerden kalan parçaları kullanmasını sağlar.
-      - name: 🐘 Gradle Cache
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: false # Cache'e yazmasına izin ver
-          gradle-home-cache-cleanup: true
-
-      # 6. Bağımlılıkları Hızlı Yükle (npm ci)
-      # npm install yerine npm ci kullanıyoruz. package-lock.json şarttır!
-      - name: 📦 Install Dependencies
+      - name: 📦 Bağımlılıkları Yükle
         run: |
           npm install -g eas-cli
-          npm ci 
+          npm install
 
-      # 7. Build İşlemi
-      - name: 🚀 Run EAS Build
+      - name: 🚀 EAS Build Başlat
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          GRADLE_OPTS: '-Dorg.gradle.daemon=false' # GitHub runner'da daemon bazen sorun çıkarır, process bazlı cache kullanıyoruz.
         run: |
-          EXT="apk"
-          if [ "${{ inputs.profile }}" == "production" ]; then
-            EXT="aab"
-          fi
-          
-          echo "Build uzantısı: $EXT olarak ayarlandı."
-          
-          # --local build işleminde gradle cache'i kullanabilmek için environment variable önemli
-          npx eas-cli build --platform android --profile ${{ inputs.profile }} --local --non-interactive --output ./tektikla-build.$EXT
+          npx eas-cli build --platform android --profile ${{ inputs.profile }} --local --non-interactive --output ./tektikla.apk
 
-      # 8. Dosyayı Artifact Olarak Yükle
-      - name: 📂 Upload Artifact
+      - name: 📂 Dosyayı Yükle (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: TekTikla-${{ inputs.profile }}-build
+          name: TekTikla-${{ inputs.profile }}-APK
           path: |
-            ./*.apk
+            ./tektikla.apk
             ./*.aab
-          retention-days: 5
+            ./*.apk
+          retention-days: 30
