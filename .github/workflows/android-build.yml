@@ -1,17 +1,8 @@
-name: Android Build (EAS Local)
+name: Tek Tıkla Android Build (Hızlı)
 
 on:
-  # Bu kısım, GitHub arayüzünden butona basarak tetiklemeyi sağlar
   workflow_dispatch:
     inputs:
-      app_name:
-        description: 'Uygulama (Loglarda görünmesi için)'
-        required: true
-        default: 'VaktiHuzur'
-        type: choice
-        options:
-        - VaktiHuzur
-        - TekTikla
       profile:
         description: 'Build Profili'
         required: true
@@ -24,7 +15,7 @@ on:
 
 jobs:
   build:
-    name: Build ${{ inputs.app_name }} - ${{ inputs.profile }}
+    name: Build Tek Tıkla - ${{ inputs.profile }}
     runs-on: ubuntu-latest
     
     steps:
@@ -32,50 +23,67 @@ jobs:
       - name: 🏗 Repo Checkout
         uses: actions/checkout@v4
 
-      # 2. Java Kurulumu (Android build için şart)
+      # 2. Java Kurulumu (Java 17 Android buildleri için ideal)
       - name: ☕ Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Node.js ve Cache Kurulumu
+      # 3. Node.js Kurulumu
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      # 4. Gradle Cache (Build hızını artırır)
+      # 4. Gradle Ayarlarını Optimize Et (EN ÖNEMLİ ADIM)
+      # GitHub Runner'ın RAM'ini verimli kullanması ve paralel işlem yapması için.
+      - name: ⚙️ Setup Gradle Config
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
+          echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+          echo "org.gradle.configureondemand=true" >> ~/.gradle/gradle.properties
+
+      # 5. Gradle Cache (Build-cache aktif edildi)
+      # build-cache-enabled: true parametresi gradle'ın önceki derlemelerden kalan parçaları kullanmasını sağlar.
       - name: 🐘 Gradle Cache
         uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false # Cache'e yazmasına izin ver
+          gradle-home-cache-cleanup: true
 
-      # 5. Bağımlılıkları Yükle
+      # 6. Bağımlılıkları Hızlı Yükle (npm ci)
+      # npm install yerine npm ci kullanıyoruz. package-lock.json şarttır!
       - name: 📦 Install Dependencies
         run: |
           npm install -g eas-cli
-          npm install
+          npm ci 
 
-      # 6. Build İşlemi (EAS Local)
-      # --local bayrağı ile Expo sunucularını değil, GitHub Runner'ı kullanırız.
-      # --non-interactive: Soru sormadan devam etmesi için.
+      # 7. Build İşlemi
       - name: 🚀 Run EAS Build
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GRADLE_OPTS: '-Dorg.gradle.daemon=false' # GitHub runner'da daemon bazen sorun çıkarır, process bazlı cache kullanıyoruz.
         run: |
-          npx eas-cli build --platform android --profile ${{ inputs.profile }} --local --non-interactive --output ./app-build.apk
+          EXT="apk"
+          if [ "${{ inputs.profile }}" == "production" ]; then
+            EXT="aab"
+          fi
+          
+          echo "Build uzantısı: $EXT olarak ayarlandı."
+          
+          # --local build işleminde gradle cache'i kullanabilmek için environment variable önemli
+          npx eas-cli build --platform android --profile ${{ inputs.profile }} --local --non-interactive --output ./tektikla-build.$EXT
 
-      # 7. Dosya Uzantısını Düzeltme (AAB ise ismini düzeltelim)
-      # Eğer production ise çıktı muhtemelen .aab olacaktır, eas local çıktısını kontrol edelim.
-      # Basitlik adına yukarıda çıktıyı sabit 'app-build.apk' yaptık ama production AAB üretir.
-      # Aşağıdaki adım dosya türünü algılayıp artifact'e doğru isimle yükler.
-
+      # 8. Dosyayı Artifact Olarak Yükle
       - name: 📂 Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.app_name }}-${{ inputs.profile }}-build
+          name: TekTikla-${{ inputs.profile }}-build
           path: |
-            ./app-build.apk
-            ./*.aab
             ./*.apk
-          retention-days: 30
+            ./*.aab
+          retention-days: 5
