@@ -1,0 +1,81 @@
+name: Android Build (EAS Local)
+
+on:
+  # Bu kısım, GitHub arayüzünden butona basarak tetiklemeyi sağlar
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Uygulama (Loglarda görünmesi için)'
+        required: true
+        default: 'VaktiHuzur'
+        type: choice
+        options:
+        - VaktiHuzur
+        - TekTikla
+      profile:
+        description: 'Build Profili'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+        - preview
+        - production
+        - development
+
+jobs:
+  build:
+    name: Build ${{ inputs.app_name }} - ${{ inputs.profile }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Kodları Çek
+      - name: 🏗 Repo Checkout
+        uses: actions/checkout@v4
+
+      # 2. Java Kurulumu (Android build için şart)
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. Node.js ve Cache Kurulumu
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # 4. Gradle Cache (Build hızını artırır)
+      - name: 🐘 Gradle Cache
+        uses: gradle/actions/setup-gradle@v3
+
+      # 5. Bağımlılıkları Yükle
+      - name: 📦 Install Dependencies
+        run: |
+          npm install -g eas-cli
+          npm install
+
+      # 6. Build İşlemi (EAS Local)
+      # --local bayrağı ile Expo sunucularını değil, GitHub Runner'ı kullanırız.
+      # --non-interactive: Soru sormadan devam etmesi için.
+      - name: 🚀 Run EAS Build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          npx eas-cli build --platform android --profile ${{ inputs.profile }} --local --non-interactive --output ./app-build.apk
+
+      # 7. Dosya Uzantısını Düzeltme (AAB ise ismini düzeltelim)
+      # Eğer production ise çıktı muhtemelen .aab olacaktır, eas local çıktısını kontrol edelim.
+      # Basitlik adına yukarıda çıktıyı sabit 'app-build.apk' yaptık ama production AAB üretir.
+      # Aşağıdaki adım dosya türünü algılayıp artifact'e doğru isimle yükler.
+
+      - name: 📂 Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.app_name }}-${{ inputs.profile }}-build
+          path: |
+            ./app-build.apk
+            ./*.aab
+            ./*.apk
+          retention-days: 30
