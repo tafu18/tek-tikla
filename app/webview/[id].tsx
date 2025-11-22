@@ -2,21 +2,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { formatUrl, getWebSites } from '../../utils/storage';
 
 export default function WebViewScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
@@ -42,14 +44,16 @@ export default function WebViewScreen() {
         setUrl(formattedUrl);
         setTitle(website.name);
       } else {
-        Alert.alert('Hata', 'Web sitesi bulunamadı.', [
-          { text: 'Tamam', onPress: () => router.back() },
+        Alert.alert(t('common.error'), t('webview.error.notfound'), [
+          { text: t('common.ok'), onPress: () => router.back() },
         ]);
       }
     } catch (error) {
-      console.error('Error loading website:', error);
-      Alert.alert('Hata', 'Web sitesi yüklenirken bir hata oluştu.', [
-        { text: 'Tamam', onPress: () => router.back() },
+      if (__DEV__) {
+        console.error('Error loading website:', error);
+      }
+      Alert.alert(t('common.error'), t('webview.error.loadfailed'), [
+        { text: t('common.ok'), onPress: () => router.back() },
       ]);
     }
   };
@@ -100,15 +104,17 @@ export default function WebViewScreen() {
 
   const handleError = (syntheticEvent: any) => {
     const { nativeEvent } = syntheticEvent;
-    console.error('WebView error: ', nativeEvent);
+    if (__DEV__) {
+      console.error('WebView error: ', nativeEvent);
+    }
     setLoading(false);
     
     // Bazı hataları kullanıcıya göstermeyelim (ör: network timeout)
     if (!nativeEvent.description?.includes('net::ERR')) {
       Alert.alert(
-        'Yükleme Hatası',
-        'Web sayfası yüklenirken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.',
-        [{ text: 'Tamam' }]
+        t('webview.error.title'),
+        t('webview.error.message'),
+        [{ text: t('common.ok') }]
       );
     }
   };

@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import AlertBottomSheet from '../components/AlertBottomSheet';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatUrl, getWebSites, isUrlBlocked, saveWebSite, updateWebSite } from '../utils/storage';
@@ -30,6 +31,9 @@ export default function AddScreen() {
   const [hasPassword, setHasPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
 
   useEffect(() => {
     // Only set template params if we're not editing (no id param)
@@ -122,8 +126,16 @@ export default function AddScreen() {
 
       router.back();
     } catch (error: any) {
-      const errorMessage = error?.message || t('add.error.save.failed');
-      Alert.alert(t('common.error'), errorMessage);
+      // Çift ekleme hatası
+      if (error?.message === 'DUPLICATE_URL') {
+        setAlertTitle(t('add.error.url.duplicate'));
+        setAlertMessage(t('add.error.url.duplicate.message'));
+        setAlertVisible(true);
+      } else {
+        setAlertTitle(t('common.error'));
+        setAlertMessage(error?.message || t('add.error.save.failed'));
+        setAlertVisible(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -232,6 +244,14 @@ export default function AddScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AlertBottomSheet
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={() => setAlertVisible(false)}
+        type="error"
+      />
     </SafeAreaView>
   );
 }

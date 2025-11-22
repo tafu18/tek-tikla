@@ -26,7 +26,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setLanguageState(savedLanguage as Language);
       }
     } catch (error) {
-      console.error('Error loading language:', error);
+      if (__DEV__) {
+        console.error('Error loading language:', error);
+      }
     }
   };
 
@@ -35,7 +37,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem('language', newLanguage);
       setLanguageState(newLanguage);
     } catch (error) {
-      console.error('Error saving language:', error);
+      if (__DEV__) {
+        console.error('Error saving language:', error);
+      }
     }
   };
 

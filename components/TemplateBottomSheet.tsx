@@ -29,10 +29,11 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 interface TemplateBottomSheetProps {
   visible: boolean;
   onClose: () => void;
-  onSelectTemplate: (template: Template) => void;
+  onSelectTemplate?: (template: Template) => void;
+  onSelectTemplates?: (templates: Template[]) => void;
 }
 
-export default function TemplateBottomSheet({ visible, onClose, onSelectTemplate }: TemplateBottomSheetProps) {
+export default function TemplateBottomSheet({ visible, onClose, onSelectTemplate, onSelectTemplates }: TemplateBottomSheetProps) {
   const { colors } = useTheme();
   const { t, language } = useLanguage();
   const insets = useSafeAreaInsets();
@@ -40,6 +41,7 @@ export default function TemplateBottomSheet({ visible, onClose, onSelectTemplate
   const opacity = useSharedValue(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedTemplates, setSelectedTemplates] = useState<Set<string>>(new Set());
 
   const SHEET_HEIGHT = SCREEN_HEIGHT * 0.85;
 
@@ -60,6 +62,7 @@ export default function TemplateBottomSheet({ visible, onClose, onSelectTemplate
       });
       setSelectedCategory(null);
       setTemplates([]);
+      setSelectedTemplates(new Set());
     }
   }, [visible, SHEET_HEIGHT]);
 
@@ -67,11 +70,33 @@ export default function TemplateBottomSheet({ visible, onClose, onSelectTemplate
     setSelectedCategory(categoryId);
     const categoryTemplates = getTemplatesByCategory(categoryId);
     setTemplates(categoryTemplates);
+    setSelectedTemplates(new Set());
   };
 
   const handleTemplateSelect = (template: Template) => {
-    onSelectTemplate(template);
-    onClose();
+    if (onSelectTemplates) {
+      // Çoklu seçim modu
+      const newSelected = new Set(selectedTemplates);
+      if (newSelected.has(template.id)) {
+        newSelected.delete(template.id);
+      } else {
+        newSelected.add(template.id);
+      }
+      setSelectedTemplates(newSelected);
+    } else if (onSelectTemplate) {
+      // Tekli seçim modu (geriye dönük uyumluluk)
+      onSelectTemplate(template);
+      onClose();
+    }
+  };
+
+  const handleAddSelected = () => {
+    if (onSelectTemplates && selectedTemplates.size > 0) {
+      const selected = templates.filter(t => selectedTemplates.has(t.id));
+      onSelectTemplates(selected);
+      setSelectedTemplates(new Set());
+      onClose();
+    }
   };
 
   const backdropStyle = useAnimatedStyle(() => ({
@@ -171,23 +196,54 @@ export default function TemplateBottomSheet({ visible, onClose, onSelectTemplate
               key={`templates-list-${selectedCategory}`}
               data={templates}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={[styles.templatesList, { paddingBottom: insets.bottom + 20 }]}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.templateCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  onPress={() => handleTemplateSelect(item)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.templateContent}>
-                    <Text style={[styles.templateName, { color: colors.text }]}>{item.name}</Text>
-                    <Text style={[styles.templateUrl, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {item.url}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              )}
+              contentContainerStyle={[styles.templatesList, { paddingBottom: insets.bottom + 80 }]}
+              renderItem={({ item }) => {
+                const isSelected = selectedTemplates.has(item.id);
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.templateCard,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      isSelected && { borderColor: colors.primary, borderWidth: 2 }
+                    ]}
+                    onPress={() => handleTemplateSelect(item)}
+                    activeOpacity={0.7}
+                  >
+                    {onSelectTemplates && (
+                      <View style={[
+                        styles.checkbox,
+                        { borderColor: colors.border },
+                        isSelected && { backgroundColor: colors.primary, borderColor: colors.primary }
+                      ]}>
+                        {isSelected && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+                      </View>
+                    )}
+                    <View style={styles.templateContent}>
+                      <Text style={[styles.templateName, { color: colors.text }]}>{item.name}</Text>
+                      <Text style={[styles.templateUrl, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {item.url}
+                      </Text>
+                    </View>
+                    {!onSelectTemplates && (
+                      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
             />
+            {onSelectTemplates && selectedTemplates.size > 0 && (
+              <View style={[styles.addButtonContainer, { paddingBottom: insets.bottom + 20 }]}>
+                <TouchableOpacity
+                  style={[styles.addButton, { backgroundColor: colors.primary }]}
+                  onPress={handleAddSelected}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.addButtonText}>
+                    {t('common.add')} ({selectedTemplates.size})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
       </Animated.View>
@@ -294,6 +350,40 @@ const styles = StyleSheet.create({
   },
   templateUrl: {
     fontSize: 14,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    backgroundColor: 'transparent',
+  },
+  addButton: {
+    borderRadius: 24,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

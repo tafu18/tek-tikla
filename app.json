@@ -8,18 +8,25 @@
     "scheme": "tek-tikla",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Favori web sitelerinize hızlı ve kolay erişim sağlayan minimalist bir uygulama. Tüm önemli web sitelerinizi tek bir yerde toplayın ve tek tıkla erişin.",
+    "privacy": "public",
     "ios": {
       "supportsTablet": true,
-      "backgroundColor": "#34D399"
+      "backgroundColor": "#34D399",
+      "bundleIdentifier": "com.tayfuntasdemir.tektikla"
     },
     "android": {
       "package": "com.tayfuntasdemir.tektikla",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#34D399",
         "foregroundImage": "./assets/images/tek-tikla.png",
         "backgroundImage": "./assets/images/tek-tikla.png",
         "monochromeImage": "./assets/images/tek-tikla.png"
       },
+      "permissions": [
+        "INTERNET"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

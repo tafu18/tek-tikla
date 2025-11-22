@@ -4,6 +4,7 @@ import { LanguageProvider } from "../contexts/LanguageContext";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import * as SystemUI from "expo-system-ui";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function ThemedStatusBar() {
   const { isDark, colors } = useTheme();
@@ -32,10 +33,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <RootLayoutNav />
-      </LanguageProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <LanguageProvider>
+          <RootLayoutNav />
+        </LanguageProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -11,6 +11,9 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'common.edit': 'Edit',
     'common.search': 'Search',
     'common.select': 'Select',
+    'common.add': 'Add',
+    'common.move': 'Move',
+    'common.move.hint': 'Select a card to swap',
     'common.loading': 'Loading...',
     'common.error': 'Error',
     'common.ok': 'OK',
@@ -35,6 +38,9 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'add.error.name.required': 'Please enter a name.',
     'add.error.url.required': 'Please enter a URL.',
     'add.error.url.invalid': 'Please enter a valid URL.',
+    'add.error.url.duplicate': 'Already Added',
+    'add.error.url.duplicate.message': 'This website is already in your list.',
+    'add.error.url.duplicate.count': 'websites were already added',
     'add.error.blocked': 'Blocked Content',
     'add.error.blocked.message': 'This site cannot be added. Please try a different site.',
     'add.error.save.failed': 'Save operation failed.',
@@ -102,6 +108,12 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'language.title': 'Language',
     'language.english': 'English',
     'language.turkish': 'Turkish',
+    
+    // WebView
+    'webview.error.title': 'Loading Error',
+    'webview.error.message': 'An error occurred while loading the web page. Please check your internet connection.',
+    'webview.error.notfound': 'Website not found.',
+    'webview.error.loadfailed': 'An error occurred while loading the website.',
   },
   tr: {
     // App Name
@@ -115,6 +127,9 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'common.edit': 'Düzenle',
     'common.search': 'Ara',
     'common.select': 'Seç',
+    'common.add': 'Ekle',
+    'common.move': 'Taşı',
+    'common.move.hint': 'Yer değiştirmek için bir kart seçin',
     'common.loading': 'Yükleniyor...',
     'common.error': 'Hata',
     'common.ok': 'Tamam',
@@ -139,6 +154,9 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'add.error.name.required': 'Lütfen bir isim girin.',
     'add.error.url.required': 'Lütfen bir URL girin.',
     'add.error.url.invalid': 'Geçerli bir URL girin.',
+    'add.error.url.duplicate': 'Zaten Eklenmiş',
+    'add.error.url.duplicate.message': 'Bu web sitesi listenizde zaten bulunuyor.',
+    'add.error.url.duplicate.count': 'web sitesi zaten eklenmiş',
     'add.error.blocked': 'Yasaklı İçerik',
     'add.error.blocked.message': 'Bu site eklenemez. Lütfen farklı bir site deneyin.',
     'add.error.save.failed': 'Kayıt işlemi başarısız oldu.',
@@ -187,7 +205,7 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'info.developer.app': 'Vakt-i Huzur App',
     
     // Templates
-    'templates.title': 'Şablonlar',
+    'templates.title': 'Kategoriler',
     'templates.select.category': 'Kategori Seç',
     'templates.select.template': 'Şablon Seç',
     'templates.category.sports': 'Spor',
@@ -206,6 +224,12 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'language.title': 'Dil',
     'language.english': 'İngilizce',
     'language.turkish': 'Türkçe',
+    
+    // WebView
+    'webview.error.title': 'Yükleme Hatası',
+    'webview.error.message': 'Web sayfası yüklenirken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.',
+    'webview.error.notfound': 'Web sitesi bulunamadı.',
+    'webview.error.loadfailed': 'Web sitesi yüklenirken bir hata oluştu.',
   },
 };
 

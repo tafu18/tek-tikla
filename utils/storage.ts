@@ -6,6 +6,7 @@ export interface WebSite {
   url: string;
   password?: string; // Şifre koruması için (opsiyonel)
   createdAt: number;
+  order?: number; // Sıralama için
 }
 
 const STORAGE_KEY = '@tek_tikla_websites';
@@ -19,7 +20,9 @@ export async function setPasswordCache(websiteId: string): Promise<void> {
     cacheData[websiteId] = Date.now() + (24 * 60 * 60 * 1000); // 1 gün sonra
     await AsyncStorage.setItem(PASSWORD_CACHE_KEY, JSON.stringify(cacheData));
   } catch (error) {
-    console.error('Error setting password cache:', error);
+    if (__DEV__) {
+      console.error('Error setting password cache:', error);
+    }
   }
 }
 
@@ -39,7 +42,9 @@ export async function isPasswordCached(websiteId: string): Promise<boolean> {
     }
     return true;
   } catch (error) {
-    console.error('Error checking password cache:', error);
+    if (__DEV__) {
+      console.error('Error checking password cache:', error);
+    }
     return false;
   }
 }
@@ -59,16 +64,26 @@ export async function clearPasswordCache(websiteId?: string): Promise<void> {
       await AsyncStorage.removeItem(PASSWORD_CACHE_KEY);
     }
   } catch (error) {
-    console.error('Error clearing password cache:', error);
+    if (__DEV__) {
+      console.error('Error clearing password cache:', error);
+    }
   }
 }
 
 export async function getWebSites(): Promise<WebSite[]> {
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    const websites = data ? JSON.parse(data) : [];
+    // Order'a göre sırala, yoksa createdAt'e göre
+    return websites.sort((a: WebSite, b: WebSite) => {
+      const orderA = a.order ?? a.createdAt;
+      const orderB = b.order ?? b.createdAt;
+      return orderA - orderB;
+    });
   } catch (error) {
-    console.error('Error loading websites:', error);
+    if (__DEV__) {
+      console.error('Error loading websites:', error);
+    }
     return [];
   }
 }
@@ -85,19 +100,30 @@ export async function saveWebSite(website: Omit<WebSite, 'id' | 'createdAt'>): P
     });
     
     if (urlExists) {
-      throw new Error('Bu URL zaten eklenmiş.');
+      const existingWebsite = websites.find((w) => {
+        const existingUrl = formatUrl(w.url);
+        return existingUrl === formattedUrl;
+      });
+      const error: any = new Error('DUPLICATE_URL');
+      error.existingWebsite = existingWebsite;
+      throw error;
     }
     
+    const now = Date.now();
     const newWebsite: WebSite = {
       ...website,
-      id: Date.now().toString(),
-      createdAt: Date.now(),
+      id: now.toString(),
+      createdAt: now,
+      order: websites.length > 0 ? Math.max(...websites.map(w => w.order ?? w.createdAt)) + 1 : now,
     };
     websites.push(newWebsite);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(websites));
     return newWebsite;
-  } catch (error) {
-    console.error('Error saving website:', error);
+  } catch (error: any) {
+    // Beklenen hatalar için konsola loglama yapma (DUPLICATE_URL gibi)
+    if (__DEV__ && error?.message !== 'DUPLICATE_URL') {
+      console.error('Error saving website:', error);
+    }
     throw error;
   }
 }
@@ -116,7 +142,9 @@ export async function updateWebSite(id: string, updates: Partial<Omit<WebSite, '
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(websites));
     }
   } catch (error) {
-    console.error('Error updating website:', error);
+    if (__DEV__) {
+      console.error('Error updating website:', error);
+    }
     throw error;
   }
 }
@@ -127,7 +155,9 @@ export async function deleteWebSite(id: string): Promise<void> {
     const filtered = websites.filter((w) => w.id !== id);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
   } catch (error) {
-    console.error('Error deleting website:', error);
+    if (__DEV__) {
+      console.error('Error deleting website:', error);
+    }
     throw error;
   }
 }
@@ -150,7 +180,9 @@ export function getFaviconUrl(url: string): string {
     return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 
   } catch (error) {
-    console.error('Error generating favicon URL:', error);
+    if (__DEV__) {
+      console.error('Error generating favicon URL:', error);
+    }
     // Hata durumunda boş string döndür
     return '';
   }
@@ -187,6 +219,37 @@ export function getDomainFromUrl(url: string): string {
     return urlObj.hostname.replace('www.', '');
   } catch (error) {
     return url;
+  }
+}
+
+// Websites sırasını güncelle
+export async function reorderWebSites(newOrder: string[]): Promise<void> {
+  try {
+    const websites = await getWebSites();
+    const websiteMap = new Map(websites.map(w => [w.id, w]));
+    
+    // Yeni sıralamaya göre order'ları güncelle
+    const reordered = newOrder.map((id, index) => {
+      const website = websiteMap.get(id);
+      if (website) {
+        return { ...website, order: index };
+      }
+      return null;
+    }).filter((w): w is WebSite => w !== null);
+    
+    // Eksik olanları ekle (silinenler olabilir)
+    websites.forEach(w => {
+      if (!newOrder.includes(w.id)) {
+        reordered.push({ ...w, order: reordered.length });
+      }
+    });
+    
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reordered));
+  } catch (error) {
+    if (__DEV__) {
+      console.error('Error reordering websites:', error);
+    }
+    throw error;
   }
 }
 

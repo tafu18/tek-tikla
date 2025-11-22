@@ -68,7 +68,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setThemeState(savedTheme as Theme);
       }
     } catch (error) {
-      console.error('Error loading theme:', error);
+      if (__DEV__) {
+        console.error('Error loading theme:', error);
+      }
     }
   };
 
@@ -77,7 +79,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem('theme', newTheme);
       setThemeState(newTheme);
     } catch (error) {
-      console.error('Error saving theme:', error);
+      if (__DEV__) {
+        console.error('Error saving theme:', error);
+      }
     }
   };
 

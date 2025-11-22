@@ -15,16 +15,20 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut
+} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import AlertBottomSheet from '../components/AlertBottomSheet';
 import DeleteBottomSheet from '../components/DeleteBottomSheet';
 import InfoBottomSheet from '../components/InfoBottomSheet';
 import PasswordBottomSheet from '../components/PasswordBottomSheet';
 import TemplateBottomSheet from '../components/TemplateBottomSheet';
-import { useTheme } from '../contexts/ThemeContext';
+import WebsiteOptionsBottomSheet from '../components/WebsiteOptionsBottomSheet';
 import { useLanguage } from '../contexts/LanguageContext';
-import { deleteWebSite, getFaviconUrl, getWebSites, isPasswordCached, setPasswordCache, WebSite } from '../utils/storage';
-import { Template } from '../utils/templates';
+import { useTheme } from '../contexts/ThemeContext';
+import { deleteWebSite, getFaviconUrl, getWebSites, isPasswordCached, reorderWebSites, saveWebSite, setPasswordCache, WebSite } from '../utils/storage';
 
 export default function HomeScreen() {
   const { colors, isDark, theme, setTheme } = useTheme();
@@ -44,6 +48,13 @@ export default function HomeScreen() {
   const [passwordInput, setPasswordInput] = useState('');
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [templateModalVisible, setTemplateModalVisible] = useState(false);
+  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [websiteForOptions, setWebsiteForOptions] = useState<WebSite | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [isMoveMode, setIsMoveMode] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
 
   const loadWebsites = useCallback(async (showLoading = true) => {
     try {
@@ -170,56 +181,47 @@ export default function HomeScreen() {
   );
 
   // Website Card Component - hook kullanabilmek için ayrı component
-  const WebsiteCard = ({ item, index, onDelete }: { item: WebSite; index: number; onDelete: (id: string, name: string, url: string) => void }) => {
+  const WebsiteCard = ({ 
+    item, 
+    index, 
+    onDelete, 
+    onPress,
+    isSelected,
+    isRefreshing,
+    isMoveMode
+  }: { 
+    item: WebSite; 
+    index: number; 
+    onDelete: (id: string, name: string, url: string) => void;
+    onPress: (item: WebSite) => void;
+    isSelected: boolean;
+    isRefreshing: boolean;
+    isMoveMode: boolean;
+  }) => {
     const { colors } = useTheme();
     const router = useRouter();
     const [imageError, setImageError] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
     const faviconUrl = getFaviconUrl(item.url);
-    
 
     return (
       <Animated.View
-        entering={FadeInDown.delay(index * 50).springify()}
-        exiting={FadeOutUp}
+        entering={isRefreshing ? undefined : FadeIn.duration(100)}
+        exiting={FadeOut.duration(80)}
         style={styles.cardContainer}
       >
         <TouchableOpacity
-          style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={async () => {
-            // Şifre kontrolü
-            if (item.password) {
-              const cached = await isPasswordCached(item.id);
-              if (cached) {
-                // Cache'de varsa direkt aç
-                router.push(`/webview/${item.id}`);
-              } else {
-                // Şifre sor
-                setWebsiteToOpen({ id: item.id, url: item.url, password: item.password });
-                setPasswordModalVisible(true);
-              }
-            } else {
-              // Şifre yoksa direkt aç
-              router.push(`/webview/${item.id}`);
+          style={[
+            styles.card, 
+            { 
+              backgroundColor: colors.card, 
+              borderColor: isSelected ? colors.primary : colors.border,
+              borderWidth: isSelected ? 2 : 1,
+              opacity: isMoveMode && !isSelected ? 0.6 : 1,
             }
-          }}
-          onLongPress={async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            // Şifre kontrolü
-            if (item.password) {
-              const cached = await isPasswordCached(item.id);
-              if (cached) {
-                // Cache'de varsa direkt aç
-                router.push(`/add?id=${item.id}`);
-              } else {
-                // Şifre sor
-                setWebsiteToOpen({ id: item.id, url: item.url, password: item.password, isEdit: true });
-                setPasswordModalVisible(true);
-              }
-            } else {
-              // Şifre yoksa direkt aç
-              router.push(`/add?id=${item.id}`);
-            }
+          ]}
+          onPress={() => {
+            onPress(item);
           }}
           activeOpacity={0.7}
         >
@@ -266,10 +268,14 @@ export default function HomeScreen() {
                   />
                 )}
                 <Pressable
-                  onPress={() => onDelete(item.id, item.name, item.url)}
-                  style={styles.deleteButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setWebsiteForOptions(item);
+                    setOptionsModalVisible(true);
+                  }}
+                  style={styles.optionsButton}
                 >
-                  <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                  <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
                 </Pressable>
               </View>
             </View>
@@ -285,8 +291,63 @@ export default function HomeScreen() {
     );
   };
 
+  const handleMove = (id: string) => {
+    setSelectedCardId(id);
+    setIsMoveMode(true);
+  };
+
+  const handleCardPress = async (item: WebSite) => {
+    // Eğer taşıma modundaysa ve farklı bir kart seçildiyse yer değiştir
+    if (isMoveMode && selectedCardId && selectedCardId !== item.id) {
+      const fromIndex = filteredWebsites.findIndex(w => w.id === selectedCardId);
+      const toIndex = filteredWebsites.findIndex(w => w.id === item.id);
+      
+      if (fromIndex !== -1 && toIndex !== -1) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const newOrder = [...filteredWebsites];
+        // Swap işlemi - iki kartın yerini değiştir
+        [newOrder[fromIndex], newOrder[toIndex]] = [newOrder[toIndex], newOrder[fromIndex]];
+        const ids = newOrder.map(w => w.id);
+        await reorderWebSites(ids);
+        await loadWebsites(false);
+        setSelectedCardId(null);
+        setIsMoveMode(false);
+      }
+      return;
+    }
+    
+    // Taşıma modunda değilse normal işlemi yap
+    if (isMoveMode) {
+      // Taşıma modunda ama aynı karta basıldıysa iptal et
+      setSelectedCardId(null);
+      setIsMoveMode(false);
+      return;
+    }
+    
+    // Normal kart açma işlemi
+    if (item.password) {
+      const cached = await isPasswordCached(item.id);
+      if (cached) {
+        router.push(`/webview/${item.id}`);
+      } else {
+        setWebsiteToOpen({ id: item.id, url: item.url, password: item.password });
+        setPasswordModalVisible(true);
+      }
+    } else {
+      router.push(`/webview/${item.id}`);
+    }
+  };
+
   const renderWebsiteCard = ({ item, index }: { item: WebSite; index: number }) => (
-    <WebsiteCard item={item} index={index} onDelete={handleDelete} />
+    <WebsiteCard 
+      item={item} 
+      index={index} 
+      onDelete={handleDelete}
+      onPress={handleCardPress}
+      isSelected={selectedCardId === item.id}
+      isRefreshing={refreshing}
+      isMoveMode={isMoveMode}
+    />
   );
 
   const renderEmptyState = () => (
@@ -309,13 +370,27 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: colors.primary }]}>{t('home.title')}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {websites.length} {t('home.websites')}
+            {isMoveMode ? t('common.move.hint') : `${websites.length} ${t('home.websites')}`}
           </Text>
         </View>
-        <View style={styles.headerActions}>
+        {isMoveMode ? (
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedCardId(null);
+              setIsMoveMode(false);
+            }}
+            style={[styles.cancelButton, { backgroundColor: colors.surface }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.cancelButtonText, { color: colors.text }]}>
+              {t('common.cancel')}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerActions}>
           <TouchableOpacity
             onPress={() => setTemplateModalVisible(true)}
             style={[styles.infoButton, { backgroundColor: colors.surface }]}
@@ -345,7 +420,8 @@ export default function HomeScreen() {
               color={colors.text}
             />
           </TouchableOpacity>
-        </View>
+          </View>
+        )}
       </View>
 
       {websites.length > 0 && (
@@ -392,6 +468,10 @@ export default function HomeScreen() {
               colors={[colors.primary]}
             />
           }
+          removeClippedSubviews={false}
+          initialNumToRender={10}
+          maxToRenderPerBatch={5}
+          windowSize={5}
         />
       )}
 
@@ -434,13 +514,95 @@ export default function HomeScreen() {
       <TemplateBottomSheet
         visible={templateModalVisible}
         onClose={() => setTemplateModalVisible(false)}
-        onSelectTemplate={(template) => {
-          router.push(`/add?name=${encodeURIComponent(template.name)}&url=${encodeURIComponent(template.url)}`);
-        }}
-      />
-    </SafeAreaView>
-  );
-}
+          onSelectTemplates={async (templates) => {
+            try {
+              let addedCount = 0;
+              let duplicateCount = 0;
+              const duplicateNames: string[] = [];
+              
+              for (const template of templates) {
+                try {
+                  await saveWebSite({ name: template.name, url: template.url });
+                  addedCount++;
+                } catch (error: any) {
+                  // URL zaten eklenmişse
+                  if (error?.message === 'DUPLICATE_URL') {
+                    duplicateCount++;
+                    duplicateNames.push(template.name);
+                  }
+                  // Diğer hatalar için loglama yapılmıyor (kullanıcıya gösterilmiyor)
+                }
+              }
+              
+              // Sonuçları kullanıcıya bildir
+              if (addedCount > 0) {
+                await loadWebsites(false);
+              }
+              
+              if (duplicateCount > 0) {
+                const duplicateMessage = duplicateCount === 1
+                  ? t('add.error.url.duplicate.message')
+                  : `${duplicateCount} ${t('add.error.url.duplicate.count')}`;
+                
+                setAlertTitle(t('add.error.url.duplicate'));
+                setAlertMessage(duplicateMessage);
+                setAlertVisible(true);
+              }
+            } catch (error) {
+              if (__DEV__) {
+                console.error('Error adding templates:', error);
+              }
+            }
+          }}
+        />
+
+        <AlertBottomSheet
+          visible={alertVisible}
+          title={alertTitle}
+          message={alertMessage}
+          onClose={() => setAlertVisible(false)}
+          type="error"
+        />
+
+        <WebsiteOptionsBottomSheet
+          visible={optionsModalVisible}
+          website={websiteForOptions}
+          onClose={() => {
+            setOptionsModalVisible(false);
+            setWebsiteForOptions(null);
+          }}
+          onEdit={async () => {
+            if (!websiteForOptions) return;
+            // Şifre kontrolü
+            if (websiteForOptions.password) {
+              const cached = await isPasswordCached(websiteForOptions.id);
+              if (cached) {
+                // Cache'de varsa direkt aç
+                router.push(`/add?id=${websiteForOptions.id}`);
+              } else {
+                // Şifre sor
+                setWebsiteToOpen({ id: websiteForOptions.id, url: websiteForOptions.url, password: websiteForOptions.password, isEdit: true });
+                setPasswordModalVisible(true);
+              }
+            } else {
+              // Şifre yoksa direkt aç
+              router.push(`/add?id=${websiteForOptions.id}`);
+            }
+          }}
+          onMove={() => {
+            if (websiteForOptions) {
+              handleMove(websiteForOptions.id);
+            }
+          }}
+          onDelete={() => {
+            if (websiteForOptions) {
+              handleDelete(websiteForOptions.id, websiteForOptions.name, websiteForOptions.url);
+            }
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
 
 const styles = StyleSheet.create({
   container: {
@@ -580,7 +742,7 @@ const styles = StyleSheet.create({
   lockIcon: {
     marginRight: 4,
   },
-  deleteButton: {
+  optionsButton: {
     padding: 4,
   },
   cardTitle: {
@@ -630,5 +792,16 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     opacity: 0.6,
+  },
+  cancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
