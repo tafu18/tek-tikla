@@ -7,10 +7,28 @@ export interface WebSite {
   password?: string; // Şifre koruması için (opsiyonel)
   createdAt: number;
   order?: number; // Sıralama için
+  isDefault?: boolean; // Varsayılan site - silinemez
 }
 
 const STORAGE_KEY = '@tek_tikla_websites';
 const PASSWORD_CACHE_KEY = '@tek_tikla_password_cache'; // Şifre cache için
+const INITIALIZED_KEY = '@tek_tikla_initialized'; // İlk kurulum kontrolü için
+
+// Varsayılan siteler
+const DEFAULT_WEBSITES: Omit<WebSite, 'id' | 'createdAt' | 'order'>[] = [
+
+    {
+    name: 'Vakt-i Huzur',
+    url: 'https://vaktihuzur.com.tr/',
+    isDefault: true,
+  },
+  {
+    name: 'Tayfun Taşdemir',
+    url: 'https://tayfuntasdemir.com.tr/',
+    isDefault: true,
+  }
+
+];
 
 // Şifre doğrulama cache'i (1 gün geçerli)
 export async function setPasswordCache(websiteId: string): Promise<void> {
@@ -72,8 +90,50 @@ export async function clearPasswordCache(websiteId?: string): Promise<void> {
 
 export async function getWebSites(): Promise<WebSite[]> {
   try {
+    // İlk kurulum kontrolü
+    const initialized = await AsyncStorage.getItem(INITIALIZED_KEY);
+    if (!initialized) {
+      // İlk kurulum - varsayılan siteleri ekle
+      const now = Date.now();
+      const defaultWebsites: WebSite[] = DEFAULT_WEBSITES.map((site, index) => ({
+        ...site,
+        id: `default-${index}`,
+        createdAt: now + index,
+        order: now + index,
+      }));
+      
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(defaultWebsites));
+      await AsyncStorage.setItem(INITIALIZED_KEY, 'true');
+      return defaultWebsites;
+    }
+
     const data = await AsyncStorage.getItem(STORAGE_KEY);
-    const websites = data ? JSON.parse(data) : [];
+    let websites: WebSite[] = data ? JSON.parse(data) : [];
+    
+    // Varsayılan sitelerin hala mevcut olduğundan emin ol
+    const defaultUrls = DEFAULT_WEBSITES.map(site => formatUrl(site.url));
+    const existingUrls = websites.map(site => formatUrl(site.url));
+    
+    const missingDefaults: WebSite[] = [];
+    DEFAULT_WEBSITES.forEach((site, index) => {
+      const formattedUrl = formatUrl(site.url);
+      if (!existingUrls.includes(formattedUrl)) {
+        const now = Date.now();
+        missingDefaults.push({
+          ...site,
+          id: `default-${Date.now()}-${index}`,
+          createdAt: now + index,
+          order: now + index,
+        });
+      }
+    });
+    
+    // Eksik varsayılan siteleri ekle
+    if (missingDefaults.length > 0) {
+      websites = [...missingDefaults, ...websites];
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(websites));
+    }
+    
     // Order'a göre sırala, yoksa createdAt'e göre
     return websites.sort((a: WebSite, b: WebSite) => {
       const orderA = a.order ?? a.createdAt;
@@ -152,8 +212,18 @@ export async function updateWebSite(id: string, updates: Partial<Omit<WebSite, '
 export async function deleteWebSite(id: string): Promise<void> {
   try {
     const websites = await getWebSites();
+    const website = websites.find((w) => w.id === id);
+    
+    // Varsayılan siteler silinemez
+    if (website?.isDefault) {
+      throw new Error('DEFAULT_WEBSITE_CANNOT_BE_DELETED');
+    }
+    
     const filtered = websites.filter((w) => w.id !== id);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    
+    // Şifre cache'ini de temizle
+    await clearPasswordCache(id);
   } catch (error) {
     if (__DEV__) {
       console.error('Error deleting website:', error);

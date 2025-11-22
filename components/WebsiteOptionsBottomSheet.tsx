@@ -118,22 +118,24 @@ export default function WebsiteOptionsBottomSheet({
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            style={[styles.option, { backgroundColor: colors.surface }]}
-            onPress={() => {
-              onDelete();
-              onClose();
-            }}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.optionIcon, { backgroundColor: '#EF4444' + '20' }]}>
-              <Ionicons name="trash-outline" size={24} color="#EF4444" />
-            </View>
-            <Text style={[styles.optionText, { color: '#EF4444' }]}>
-              {t('common.delete')}
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          {!website.isDefault && (
+            <TouchableOpacity
+              style={[styles.option, { backgroundColor: colors.surface }]}
+              onPress={() => {
+                onDelete();
+                onClose();
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.optionIcon, { backgroundColor: '#EF4444' + '20' }]}>
+                <Ionicons name="trash-outline" size={24} color="#EF4444" />
+              </View>
+              <Text style={[styles.optionText, { color: '#EF4444' }]}>
+                {t('common.delete')}
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </BottomSheet>

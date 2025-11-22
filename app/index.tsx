@@ -4,20 +4,20 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import Animated, {
-  FadeIn,
-  FadeOut
+    FadeIn,
+    FadeOut
 } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AlertBottomSheet from '../components/AlertBottomSheet';
@@ -136,8 +136,12 @@ export default function HomeScreen() {
       setDeletePasswordInput('');
       setDeletePasswordRequired(false);
       setWebsiteToDelete(null);
-    } catch (error) {
-      Alert.alert(t('common.error'), t('delete.error'));
+    } catch (error: any) {
+      if (error?.message === 'DEFAULT_WEBSITE_CANNOT_BE_DELETED') {
+        Alert.alert(t('common.error'), t('delete.error.default'));
+      } else {
+        Alert.alert(t('common.error'), t('delete.error'));
+      }
       setDeleteModalVisible(false);
       setDeletePasswordInput('');
       setDeletePasswordRequired(false);

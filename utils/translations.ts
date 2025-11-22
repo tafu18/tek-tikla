@@ -55,6 +55,7 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'delete.error': 'Deletion failed.',
     'delete.warning': 'This website will be permanently deleted. This action cannot be undone.',
     'delete.confirm': 'Delete',
+    'delete.error.default': 'This default website cannot be deleted.',
     
     // Password
     'password.title': 'Password Required',
@@ -171,6 +172,7 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     'delete.error': 'Silme işlemi başarısız oldu.',
     'delete.warning': 'Bu web sitesi kalıcı olarak silinecek. Bu işlem geri alınamaz.',
     'delete.confirm': 'Sil',
+    'delete.error.default': 'Bu varsayılan site silinemez.',
     
     // Password
     'password.title': 'Şifre Gerekli',
