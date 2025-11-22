@@ -299,13 +299,13 @@ export async function reorderWebSites(newOrder: string[]): Promise<void> {
     const websiteMap = new Map(websites.map(w => [w.id, w]));
     
     // Yeni sıralamaya göre order'ları güncelle
-    const reordered = newOrder.map((id, index) => {
+    const reordered: WebSite[] = [];
+    newOrder.forEach((id, index) => {
       const website = websiteMap.get(id);
       if (website) {
-        return { ...website, order: index };
+        reordered.push({ ...website, order: index });
       }
-      return null;
-    }).filter((w): w is WebSite => w !== null);
+    });
     
     // Eksik olanları ekle (silinenler olabilir)
     websites.forEach(w => {
