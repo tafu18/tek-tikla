@@ -46,14 +46,23 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          npx eas-cli build --platform android --profile ${{ inputs.profile }} --local --non-interactive --output ./tektikla.apk
+          EXT="apk"
+          if [ "${{ inputs.profile }}" = "production" ]; then
+            EXT="aab"
+          fi
+      
+          npx eas-cli build \
+            --platform android \
+            --profile ${{ inputs.profile }} \
+            --local \
+            --non-interactive \
+            --output ./tektikla.$EXT
 
-      - name: 📂 Dosyayı Yükle (Artifact)
+
+      - name: 📂 TekTıkla-${{ inputs.profile }} (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: TekTikla-${{ inputs.profile }}-APK
-          path: |
-            ./tektikla.apk
-            ./*.aab
-            ./*.apk
+          name: TekTıkla-${{ inputs.profile }}
+          path: ./tektikla.*
+
           retention-days: 5
