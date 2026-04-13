@@ -58,11 +58,14 @@ jobs:
             --non-interactive \
             --output ./tektikla.$EXT
 
+      - name: 🕒 Tarih ve Saati Al
+        id: date
+        run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
 
       - name: 📂 TekTıkla-${{ inputs.profile }} (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: TekTıkla-${{ inputs.profile }}
+          name: TekTıkla-${{ inputs.profile }}-${{ env.TIMESTAMP }}-APK
           path: ./tektikla.*
 
           retention-days: 5

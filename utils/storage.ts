@@ -17,9 +17,14 @@ const INITIALIZED_KEY = '@tek_tikla_initialized'; // İlk kurulum kontrolü içi
 // Varsayılan siteler
 const DEFAULT_WEBSITES: Omit<WebSite, 'id' | 'createdAt' | 'order'>[] = [
 
-    {
+  {
     name: 'Vakt-i Huzur',
     url: 'https://vaktihuzur.com.tr/',
+    isDefault: true,
+  },
+  {
+    name: 'Vaktify - Geliştiriciler İçin Android Uygulama Test Platformu',
+    url: 'https://vaktify.com/',
     isDefault: true,
   },
   {
@@ -101,7 +106,7 @@ export async function getWebSites(): Promise<WebSite[]> {
         createdAt: now + index,
         order: now + index,
       }));
-      
+
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(defaultWebsites));
       await AsyncStorage.setItem(INITIALIZED_KEY, 'true');
       return defaultWebsites;
@@ -109,11 +114,11 @@ export async function getWebSites(): Promise<WebSite[]> {
 
     const data = await AsyncStorage.getItem(STORAGE_KEY);
     let websites: WebSite[] = data ? JSON.parse(data) : [];
-    
+
     // Varsayılan sitelerin hala mevcut olduğundan emin ol
     const defaultUrls = DEFAULT_WEBSITES.map(site => formatUrl(site.url));
     const existingUrls = websites.map(site => formatUrl(site.url));
-    
+
     const missingDefaults: WebSite[] = [];
     DEFAULT_WEBSITES.forEach((site, index) => {
       const formattedUrl = formatUrl(site.url);
@@ -127,13 +132,13 @@ export async function getWebSites(): Promise<WebSite[]> {
         });
       }
     });
-    
+
     // Eksik varsayılan siteleri ekle
     if (missingDefaults.length > 0) {
       websites = [...missingDefaults, ...websites];
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(websites));
     }
-    
+
     // Order'a göre sırala, yoksa createdAt'e göre
     return websites.sort((a: WebSite, b: WebSite) => {
       const orderA = a.order ?? a.createdAt;
@@ -152,13 +157,13 @@ export async function saveWebSite(website: Omit<WebSite, 'id' | 'createdAt'>): P
   try {
     const websites = await getWebSites();
     const formattedUrl = formatUrl(website.url);
-    
+
     // Aynı URL kontrolü (path dahil tam URL karşılaştırması)
     const urlExists = websites.some((w) => {
       const existingUrl = formatUrl(w.url);
       return existingUrl === formattedUrl;
     });
-    
+
     if (urlExists) {
       const existingWebsite = websites.find((w) => {
         const existingUrl = formatUrl(w.url);
@@ -168,7 +173,7 @@ export async function saveWebSite(website: Omit<WebSite, 'id' | 'createdAt'>): P
       error.existingWebsite = existingWebsite;
       throw error;
     }
-    
+
     const now = Date.now();
     const newWebsite: WebSite = {
       ...website,
@@ -213,15 +218,15 @@ export async function deleteWebSite(id: string): Promise<void> {
   try {
     const websites = await getWebSites();
     const website = websites.find((w) => w.id === id);
-    
+
     // Varsayılan siteler silinemez
     if (website?.isDefault) {
       throw new Error('DEFAULT_WEBSITE_CANNOT_BE_DELETED');
     }
-    
+
     const filtered = websites.filter((w) => w.id !== id);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    
+
     // Şifre cache'ini de temizle
     await clearPasswordCache(id);
   } catch (error) {
@@ -245,7 +250,7 @@ export function getFaviconUrl(url: string): string {
     const formattedUrl = formatUrl(url);
     const urlObj = new URL(formattedUrl);
     const domain = urlObj.hostname.replace('www.', '');
-    
+
     // Google Favicon API - daha büyük boyut için sz parametresi
     return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 
@@ -266,7 +271,7 @@ export function getFaviconUrlAlternatives(url: string): string[] {
     const domain = urlObj.hostname.replace('www.', '');
     const protocol = urlObj.protocol;
     const hostname = urlObj.hostname;
-    
+
     return [
       // Google Favicon API
       `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
@@ -297,7 +302,7 @@ export async function reorderWebSites(newOrder: string[]): Promise<void> {
   try {
     const websites = await getWebSites();
     const websiteMap = new Map(websites.map(w => [w.id, w]));
-    
+
     // Yeni sıralamaya göre order'ları güncelle
     const reordered: WebSite[] = [];
     newOrder.forEach((id, index) => {
@@ -306,14 +311,14 @@ export async function reorderWebSites(newOrder: string[]): Promise<void> {
         reordered.push({ ...website, order: index });
       }
     });
-    
+
     // Eksik olanları ekle (silinenler olabilir)
     websites.forEach(w => {
       if (!newOrder.includes(w.id)) {
         reordered.push({ ...w, order: reordered.length });
       }
     });
-    
+
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reordered));
   } catch (error) {
     if (__DEV__) {
@@ -356,11 +361,11 @@ export function isUrlBlocked(url: string, name?: string): { blocked: boolean; re
     const urlLower = formattedUrl.toLowerCase();
     const nameLower = (name || '').toLowerCase();
     const combined = `${urlLower} ${nameLower}`;
-    
+
     // Domain kontrolü
     const urlObj = new URL(formattedUrl);
     const domain = urlObj.hostname.replace('www.', '').toLowerCase();
-    
+
     for (const blockedDomain of BLOCKED_DOMAINS) {
       if (domain.includes(blockedDomain) || blockedDomain.includes(domain)) {
         return {
@@ -369,7 +374,7 @@ export function isUrlBlocked(url: string, name?: string): { blocked: boolean; re
         };
       }
     }
-    
+
     // Keyword kontrolü
     for (const keyword of BLOCKED_KEYWORDS) {
       if (combined.includes(keyword)) {
@@ -379,7 +384,7 @@ export function isUrlBlocked(url: string, name?: string): { blocked: boolean; re
         };
       }
     }
-    
+
     return { blocked: false };
   } catch (error) {
     // URL parse hatası durumunda engelleme yapma
